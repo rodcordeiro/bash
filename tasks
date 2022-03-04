@@ -1,0 +1,13 @@
+- [ ] Configurar o token da api em um arquivo .discloud na home do usuário
+- [ ] Verificar se existe o arquivo .discloud ou discloud.txt.
+- [ ] Verificar se o token está cadastrado
+- [ ] Criar uma pasta temporária com os arquivos/pastas cadastrados no campo file do .discloud
+<!-- powershell.exe Compress-Archive -Path '%cd%\*.*' -DestinationPath "app.zip" -->
+- [ ] Zipar a pasta temporária
+- [ ] Enviar para a API
+<!-- curl -H "api-token:%token%"  -F "file=@app.zip" https://discloud.app/status/bot/%url%/commit -->
+- [ ] Deletar pasta temporária
+
+token_5aAEWCFJM7Mqv9fvvHmpMP93wQHS3f4MgTlbK91ieNA0LWBqQI2v7lIoi5xVIZA 
+meu_id 687670706959679576
+bot_id 793101939546128394
