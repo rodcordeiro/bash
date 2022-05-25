@@ -1,6 +1,12 @@
 {
     "name": "Kuuhaku",
     "id": "13",
-    "files": [],
-    "exclude": []
+    "files": [
+        "./bot/*"
+    ],
+    "exclude": [
+        "__pycache__",
+        "./bot/*/__pycache__",
+        ".env"
+    ]
 }

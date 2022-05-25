@@ -1,48 +1,81 @@
-function getMessage(){
+<#PSScriptInfo
+
+.VERSION 0.0.1
+
+.GUID f1eeb551-d414-4072-908c-d3d4cf5b00cf
+
+.AUTHOR Rodrigo Cordeiro <rodrigomendoncca@gmail.com> (https://rodcordeiro.com)
+
+.COMPANYNAME 
+
+.COPYRIGHT 
+
+.TAGS 
+
+.LICENSEURI 
+
+.PROJECTURI 
+
+.ICONURI 
+
+.EXTERNALMODULEDEPENDENCIES 
+
+.REQUIREDSCRIPTS 
+
+.EXTERNALSCRIPTDEPENDENCIES 
+
+.RELEASENOTES
+
+
+#>
+
+
+function getMessage() {
     $key = $args[0][0];
-    if ($args[0][1]){
-        $language= $args[0][1];
-    } else {
-        $language= 1;
+    if ($args[0][1]) {
+        $language = $args[0][1];
+    }
+    else {
+        $language = 1;
     }
     
     $messages = [PSCustomObject]@{
-        'user_config_file_not_found'=@{
+        'user_config_file_not_found' = @{
             1 = 'User settings not found.';
             2 = 'Configuracoes de usuario nao encontradas.';
         };
-        'config_file_not_found' = @{
-            1='Project settings not found. Please, run discloud init to set up';
-            2='Configuracoes de projeto nao encontradas. Por favor, execute discloud init para configura-las';    
+        'config_file_not_found'      = @{
+            1 = 'Project settings not found. Please, run discloud init to set up';
+            2 = 'Configuracoes de projeto nao encontradas. Por favor, execute discloud init para configura-las';    
             
         };
-        'token_message' = @{
-            1='Please, inform your Discloud API Token';
-            2= 'Por favor, informe seu token da API Discloud'
+        'token_message'              = @{
+            1 = 'Please, inform your Discloud API Token';
+            2 = 'Por favor, informe seu token da API Discloud'
         };
-        'default' = @{
-            1='Script execution failure';
-            2='Falha na execução do script';
+        'default'                    = @{
+            1 = 'Script execution failure';
+            2 = 'Falha na execução do script';
         };
-        'inform_project_name' = @{
-            1='Inform the project name';
-            2='Informe o nome do projeto';
+        'inform_project_name'        = @{
+            1 = 'Inform the project name';
+            2 = 'Informe o nome do projeto';
         };
-        'inform_project_id' = @{
-            1='Inform the project id';
-            2='Informe o id do projeto';
+        'inform_project_id'          = @{
+            1 = 'Inform the project id';
+            2 = 'Informe o id do projeto';
         };
-        'created_discloud_file' = @{
-            1='Discloud project created. For including files, you must open .discloud and add files on "Files" field';
-            2='Projeto Discloud criado. Para inclusao dos arquivos, acesse o .discloud e adicione-os no campo "Files"';
+        'created_discloud_file'      = @{
+            1 = 'Discloud project created. For including files, you must open .discloud and add files on "Files" field';
+            2 = 'Projeto Discloud criado. Para inclusao dos arquivos, acesse o .discloud e adicione-os no campo "Files"';
         };
      
     } 
     
     return $messages.$key.$language
 }
-function get_config(){
-    if($(Test-Path -Path "$($env:USERPROFILE)\Discloud\.discloud")){
+function get_config() {
+    if ($(Test-Path -Path "$($env:USERPROFILE)\Discloud\.discloud")) {
         $config = Get-Content -Path $(Resolve-Path -Path "$($env:USERPROFILE)\Discloud\.discloud") | ConvertFrom-Json
         return $config
     }
@@ -63,7 +96,7 @@ function get_config(){
     
 }
 
-function init(){
+function init() {
     $config = get_config
     $settings = @{}
     $name = Read-Host 'Inform the project name'
@@ -78,31 +111,32 @@ function init(){
     
 }
 
-function commit(){
+function commit() {
     $config = get_config
     $file = get_config_file($PWD)
-    if(!$file) {
-        $message = getMessage('config_file_not_found',$config.language)
+    if (!$file) {
+        $message = getMessage('config_file_not_found', $config.language)
         Write-Host $message
         return
     }
     $content = Get-Content -Path $file | ConvertFrom-Json
-    if(Test-Path './app.zip'){
+    if (Test-Path './app.zip') {
         Remove-Item -Path './app.zip' -Force
     }
+    
     New-Item -Type 'directory' -Name 'tmp' | Out-Null
-    $content.files | ForEach-Object {
-        Copy-Item -Path $(Resolve-Path -Path "./$($_)") '.\tmp' -Recurse -Force
-    }
+    Copy-Item $content.files '.\tmp' -Exclude $content.exclude -Recurse -Force
+    # $content.files | ForEach-Object {
+    #     Copy-Item -Path $(Resolve-Path -Path "./$($_)") '.\tmp' -Exclude $content.exclude -Recurse -Force
+    # }
     Compress-Archive -Path '.\tmp\*' -DestinationPath ".\app.zip" -Force | Out-Null
-    Remove-Item -Force -Recurse -Path '.\tmp' 
-    $url = "https://discloud.app/status/bot/$($content.id)/commit"
-    $upload = Invoke-MultipartFormDataUpload('.\app.zip',$config.token,$url)
-    $upload
+    # Remove-Item -Force -Recurse -Path '.\tmp' 
+    # $url = "https://discloud.app/status/bot/$($content.id)/commit"
+    # $upload = Invoke-MultipartFormDataUpload('.\app.zip', $config.token, $url)
+    # $upload
 }
 
-function Invoke-MultipartFormDataUpload
-{
+function Invoke-MultipartFormDataUpload {
     [CmdletBinding()]
     PARAM
     (
@@ -111,12 +145,10 @@ function Invoke-MultipartFormDataUpload
         [Uri][parameter(Mandatory = $true)][ValidateNotNullOrEmpty()]$Uri,
         [System.Management.Automation.PSCredential]$Credential
     )
-    BEGIN
-    {
-        if (-not (Test-Path $InFile))
-        {
+    BEGIN {
+        if (-not (Test-Path $InFile)) {
             $errorMessage = ("File {0} missing or unable to read." -f $InFile)
-            $exception =  New-Object System.Exception $errorMessage
+            $exception = New-Object System.Exception $errorMessage
             $errorRecord = New-Object System.Management.Automation.ErrorRecord $exception, 'MultipartFormDataUpload', ([System.Management.Automation.ErrorCategory]::InvalidArgument), $InFile
             $PSCmdlet.ThrowTerminatingError($errorRecord)
         }
@@ -125,24 +157,20 @@ function Invoke-MultipartFormDataUpload
 
         $mimeType = [System.Web.MimeMapping]::GetMimeMapping($InFile)
 
-        if ($mimeType)
-        {
+        if ($mimeType) {
             $ContentType = $mimeType
         }
-        else
-        {
+        else {
             $ContentType = "application/octet-stream"
         }
     
     }
-    PROCESS
-    {
+    PROCESS {
         Add-Type -AssemblyName System.Net.Http
 
         $httpClientHandler = New-Object System.Net.Http.HttpClientHandler
 
-        if ($Credential)
-        {
+        if ($Credential) {
             $networkCredential = New-Object System.Net.NetworkCredential @($Credential.UserName, $Credential.Password)
             $httpClientHandler.Credentials = $networkCredential
         }
@@ -162,12 +190,10 @@ function Invoke-MultipartFormDataUpload
         $content = New-Object System.Net.Http.MultipartFormDataContent
         $content.Add($streamContent)
 
-        try
-        {
+        try {
             $response = $httpClient.PostAsync($Uri, $content).Result
 
-            if (!$response.IsSuccessStatusCode)
-            {
+            if (!$response.IsSuccessStatusCode) {
                 $responseBody = $response.Content.ReadAsStringAsync().Result
                 $errorMessage = "Status code {0}. Reason {1}. Server reported the following message: {2}." -f $response.StatusCode, $response.ReasonPhrase, $responseBody
 
@@ -178,19 +204,15 @@ function Invoke-MultipartFormDataUpload
 
             return $responseBody
         }
-        catch [Exception]
-        {
+        catch [Exception] {
             $PSCmdlet.ThrowTerminatingError($_)
         }
-        finally
-        {
-            if($null -ne $httpClient)
-            {
+        finally {
+            if ($null -ne $httpClient) {
                 $httpClient.Dispose()
             }
 
-            if($null -ne $response)
-            {
+            if ($null -ne $response) {
                 $response.Dispose()
             }
         }
@@ -231,18 +253,18 @@ Function get_config_file([string]$Path) {
 }
 
 function discloud(
-    [Parameter(Position=0, Mandatory=$True)]
+    [Parameter(Position = 0)]
     [ValidateSet("commit", "init")]
     [string]$Command
-  ){
-      switch ($Command) {
+) {
+    switch ($Command) {
         'commit' { 
             commit
-         }
-         'init' { 
+        }
+        'init' { 
             init
-         }
-          Default {}
-      }
-  }
+        }
+        Default {}
+    }
+}
 Export-ModuleMember -Function discloud
